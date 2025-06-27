@@ -1,10 +1,10 @@
 # Low Poly Converter
-Convert your images and gifs (WIP) into low poly variants! Allows resizing and tweaking the intensity of the poly-fication.
+Convert your images and gifs into low poly variants! Allows resizing and tweaking the intensity of the poly-fication.
 
 #### Supports:
 - jpg/jpeg
 - png
-- gif [WIP]
+- gif
 
 The resulting output will be saved to `[input_file_path]-low-poly.[format]`
 
