@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"image"
-	"image/draw"
 	"image/gif"
 	"os"
 	"path/filepath"
@@ -50,31 +48,16 @@ func handleGifProcess(inputPath, outputPath string, width, height, intensity int
 		fmt.Println("Error loading GIF: ", err)
 		os.Exit(1)
 	}
-	for idx, frame := range images.Image {
-		img := frame
-		if width > 0 || height > 0 {
-			resized := internal.ResizeImage(img, width, height)
-			if paletted, ok := resized.(*image.Paletted); ok {
-				img = paletted
-			} else {
-				bounds := resized.Bounds()
-				palettedImg := image.NewPaletted(bounds, frame.Palette)
-				draw.Draw(palettedImg, bounds, resized, bounds.Min, draw.Over)
-				img = palettedImg
-			}
-		}
-		processedImage := internal.ApplyLowPoly(img, intensity)
-		gifFrame := image.NewPaletted(processedImage.Bounds(), frame.Palette)
-		draw.Draw(gifFrame, gifFrame.Rect, processedImage, processedImage.Bounds().Min, draw.Over)
-		images.Image[idx] = gifFrame
-	}
 	outFile, err := os.Create(outputPath)
 	if err != nil {
 		fmt.Println("Error creating output file: ", err)
 		os.Exit(1)
 	}
 	defer outFile.Close()
-	if err := gif.EncodeAll(outFile, images); err != nil {
+
+	if err := gif.EncodeAll(
+		outFile,
+		internal.ResizeGif(images, width, height, intensity)); err != nil {
 		fmt.Println("Error saving GIF: ", err)
 		os.Exit(1)
 	}
