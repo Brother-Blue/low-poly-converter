@@ -124,10 +124,14 @@ func main() {
 
 	fmt.Printf("Processing image: %s\n", inputPath)
 	fmt.Printf("Output will be saved to: %s\n", outputPath)
-	if ext == ".gif" {
+
+	switch ext {
+	case ".gif":
 		handleGifProcess(inputPath, outputPath, width, height, intensity)
-	} else {
+	case ".jpg", ".jpeg", ".png":
 		handleStaticImageProcess(inputPath, outputPath, ext, width, height, intensity)
+	default:
+		fmt.Printf("Unsupported image format: %s\n", ext)
 	}
 	fmt.Println("Image processing complete. Low-poly image saved successfully.")
 
