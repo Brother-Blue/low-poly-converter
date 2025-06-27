@@ -12,8 +12,13 @@ import (
 // One poly point per X pixels
 const density = 500
 
+// Minimum of 10 triangulation points
 const minPoints = 10
 
+/*
+ApplyLowPoly applies a low-poly effect to the given image.
+The intensity parameter controls the number of triangulation points.
+*/
 func ApplyLowPoly(img image.Image, intensity int) image.Image {
 	bounds := img.Bounds()
 	w, h := bounds.Dx(), bounds.Dy()
@@ -62,6 +67,10 @@ func ApplyLowPoly(img image.Image, intensity int) image.Image {
 	return out
 }
 
+/*
+isPointInTriangle checks if a point (px, py) is inside the triangle defined by points (ax, ay), (bx, by), and (cx, cy).
+It uses the barycentric coordinates method to determine if the point is within the triangle.
+*/
 func isPointInTriangle(px, py, ax, ay, bx, by, cx, cy float64) bool {
 	p1x, p1y := cx-ax, cy-ay
 	p2x, p2y := bx-ax, by-ay
@@ -84,6 +93,11 @@ func isPointInTriangle(px, py, ax, ay, bx, by, cx, cy float64) bool {
 	return (u >= 0) && (v >= 0) && (u+v <= 1)
 }
 
+/*
+computeAverageColor computes the average color of the pixels inside the triangle defined by points (ax, ay), (bx, by), and (cx, cy).
+It iterates over the bounding box of the triangle and checks if each pixel is inside the triangle
+using the isPointInTriangle function.
+*/
 func computeAverageColor(img image.Image, ax, ay, bx, by, cx, cy float64) color.Color {
 	minX := int(min(ax, min(bx, cx)))
 	maxX := int(max(ax, max(bx, cx)))
@@ -114,6 +128,7 @@ func computeAverageColor(img image.Image, ax, ay, bx, by, cx, cy float64) color.
 	}
 }
 
+// fillTriangle fills the triangle defined by points (ax, ay), (bx, by), and (cx, cy) in the image with the specified color.
 func fillTriangle(img *image.RGBA, ax, ay, bx, by, cx, cy float64, col color.Color) {
 	minX := int(min(ax, min(bx, cx)))
 	maxX := int(max(ax, max(bx, cx)))
