@@ -22,12 +22,19 @@ func ApplyLowPoly(img image.Image, intensity int) image.Image {
 	polyPoints = max(polyPoints, minPoints)
 
 	// Generate random points
-	points := make([][2]float64, polyPoints)
+	// Add + 4 to account for the corners
+	points := make([][2]float64, polyPoints+4)
 	for i := 0; i < polyPoints; i++ {
 		x := rand.Float64() * float64(w)
 		y := rand.Float64() * float64(h)
-		points[i] = [2]float64{x, y}
+		points = append(points, [2]float64{x, y})
 	}
+
+	// Add corners of the image
+	points[polyPoints] = [2]float64{0, 0}
+	points[polyPoints+1] = [2]float64{float64(w - 1), 0}
+	points[polyPoints+2] = [2]float64{0, float64(h - 1)}
+	points[polyPoints+3] = [2]float64{float64(w - 1), float64(h - 1)}
 
 	// Delaunay triangulation
 	delPoints := make([]delaunay.Point, len(points))
