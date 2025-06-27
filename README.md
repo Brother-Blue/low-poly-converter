@@ -26,3 +26,14 @@ The resulting output will be saved to `[input_file_path]-low-poly.[format]`
 ## Examples
 ![alt text](docs/images/lion.jpg)
 ![alt text](docs/images/lion-low-poly.jpg) 
+
+## Contibuting
+Building the CLI
+```bash
+go build -ldflags="-s -w" -o low-poly.exe ./cmd
+```
+
+Run the CLI with `-debug` enabled
+```bash
+low-poly.exe -debug [OPTIONS] [PATH_TO_IMG]
+```

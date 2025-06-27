@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"os"
 
+	"github.com/schollz/progressbar/v3"
 	"golang.org/x/image/draw"
 )
 
@@ -77,4 +78,41 @@ func ResizeImage(img image.Image, width int, height int) image.Image {
 	dst := image.NewRGBA(image.Rect(0, 0, width, height))
 	draw.CatmullRom.Scale(dst, dst.Bounds(), img, img.Bounds(), draw.Over, nil)
 	return dst
+}
+
+/*
+ResizeGif resizes each frame of the given GIF image to the specified width and height.
+If width or height is set to 0, it retains the original dimensions of the GIF.
+It uses the intesity parameter to adjust the low poly effect applied to each frame.
+*/
+func ResizeGif(images *gif.GIF, width, height, intensity int, bar *progressbar.ProgressBar) *gif.GIF {
+	var newWidth, newHeight int
+	if width > 0 && height > 0 {
+		newWidth, newHeight = width, height
+	} else {
+		newWidth = images.Config.Width
+		newHeight = images.Config.Height
+	}
+	images.Config.Width = newWidth
+	images.Config.Height = newHeight
+
+	for idx, frame := range images.Image {
+		img := frame
+		if width > 0 || height > 0 {
+			resized := ResizeImage(img, width, height)
+			bounds := image.Rect(0, 0, newWidth, newHeight)
+			palettedImg := image.NewPaletted(bounds, frame.Palette)
+			draw.Draw(palettedImg, bounds, resized, resized.Bounds().Min, draw.Over)
+			img = palettedImg
+		}
+		processedImage := ApplyLowPoly(img, intensity)
+		bounds := image.Rect(0, 0, newWidth, newHeight)
+		gifFrame := image.NewPaletted(bounds, frame.Palette)
+		draw.Draw(gifFrame, bounds, processedImage, processedImage.Bounds().Min, draw.Over)
+		images.Image[idx] = gifFrame
+		if bar != nil {
+			bar.Add(1)
+		}
+	}
+	return images
 }
