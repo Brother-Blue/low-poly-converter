@@ -7,20 +7,17 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"golang.org/x/image/draw"
 )
 
-func LoadImage(path string) (image.Image, string, error) {
+func LoadImage(path string, ext string) (image.Image, string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, "", err
 	}
 	defer file.Close()
 
-	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
 	case ".jpg", ".jpeg":
 		img, err := jpeg.Decode(file)
@@ -28,12 +25,18 @@ func LoadImage(path string) (image.Image, string, error) {
 	case ".png":
 		img, err := png.Decode(file)
 		return img, "png", err
-	case ".gif":
-		img, err := gif.Decode(file)
-		return img, "gif", err
 	default:
 		return nil, "", fmt.Errorf("unsupported image format: %s", ext)
 	}
+}
+
+func LoadGIF(path string) (*gif.GIF, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	return gif.DecodeAll(file)
 }
 
 func SaveImage(img image.Image, path string, format string) error {
