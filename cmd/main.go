@@ -13,12 +13,14 @@ import (
 	"strings"
 
 	"github.com/brother-blue/low-poly-converter/internal"
+	"github.com/schollz/progressbar/v3"
 )
 
 var (
-	resizeFlag    = flag.String("resize", "", "Resize the image to the specified dimensions (e.g., 800x600)")
-	intensityFlag = flag.Int("intensity", 100, "Set the intensity of the image processing (1-100)")
-	debugFlag     = flag.Bool("debug", false, "Enable debug mode (creates prof files for use with `go tool pprof ... ./cpu.prof`)")
+	resizeFlag       = flag.String("resize", "", "Resize the image to the specified dimensions (e.g., 800x600)")
+	intensityFlag    = flag.Int("intensity", 100, "Set the intensity of the image processing (1-100)")
+	debugFlag        = flag.Bool("debug", false, "Enable debug mode (creates prof files for use with `go tool pprof ... ./cpu.prof`)")
+	showProgressFlag = flag.Bool("showProgress", false, "Show progress bar during processing (only for GIFs)")
 )
 
 func parseRezie(dimensions string) (width int, height int, err error) {
@@ -55,9 +57,17 @@ func handleGifProcess(inputPath, outputPath string, width, height, intensity int
 	}
 	defer outFile.Close()
 
+	var bar *progressbar.ProgressBar
+	if *showProgressFlag {
+		bar = progressbar.NewOptions(
+			len(images.Image),
+			progressbar.OptionSetDescription("Processing frames..."),
+		)
+	}
+
 	if err := gif.EncodeAll(
 		outFile,
-		internal.ResizeGif(images, width, height, intensity)); err != nil {
+		internal.ResizeGif(images, width, height, intensity, bar)); err != nil {
 		fmt.Println("Error saving GIF: ", err)
 		os.Exit(1)
 	}
@@ -65,6 +75,13 @@ func handleGifProcess(inputPath, outputPath string, width, height, intensity int
 }
 
 func handleStaticImageProcess(inputPath, outputPath, ext string, width, height, intensity int) {
+	var bar *progressbar.ProgressBar
+	if *showProgressFlag {
+		bar = progressbar.NewOptions(
+			1,
+			progressbar.OptionSetDescription("Processing image..."),
+		)
+	}
 	img, format, err := internal.LoadImage(inputPath, ext)
 	if err != nil {
 		fmt.Println("Error loading image:", err)
@@ -77,6 +94,7 @@ func handleStaticImageProcess(inputPath, outputPath, ext string, width, height, 
 	}
 
 	lowPolyImage := internal.ApplyLowPoly(img, intensity)
+	bar.Add(1)
 	if err := internal.SaveImage(lowPolyImage, outputPath, format); err != nil {
 		fmt.Println("Error saving image:", err)
 		os.Exit(1)

@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"os"
 
+	"github.com/schollz/progressbar/v3"
 	"golang.org/x/image/draw"
 )
 
@@ -84,7 +85,7 @@ ResizeGif resizes each frame of the given GIF image to the specified width and h
 If width or height is set to 0, it retains the original dimensions of the GIF.
 It uses the intesity parameter to adjust the low poly effect applied to each frame.
 */
-func ResizeGif(images *gif.GIF, width, height, intensity int) *gif.GIF {
+func ResizeGif(images *gif.GIF, width, height, intensity int, bar *progressbar.ProgressBar) *gif.GIF {
 	var newWidth, newHeight int
 	if width > 0 && height > 0 {
 		newWidth, newHeight = width, height
@@ -109,6 +110,9 @@ func ResizeGif(images *gif.GIF, width, height, intensity int) *gif.GIF {
 		gifFrame := image.NewPaletted(bounds, frame.Palette)
 		draw.Draw(gifFrame, bounds, processedImage, processedImage.Bounds().Min, draw.Over)
 		images.Image[idx] = gifFrame
+		if bar != nil {
+			bar.Add(1)
+		}
 	}
 	return images
 }
