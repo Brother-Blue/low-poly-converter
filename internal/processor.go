@@ -79,6 +79,11 @@ func ResizeImage(img image.Image, width int, height int) image.Image {
 	return dst
 }
 
+/*
+ResizeGif resizes each frame of the given GIF image to the specified width and height.
+If width or height is set to 0, it retains the original dimensions of the GIF.
+It uses the intesity parameter to adjust the low poly effect applied to each frame.
+*/
 func ResizeGif(images *gif.GIF, width, height, intensity int) *gif.GIF {
 	var newWidth, newHeight int
 	if width > 0 && height > 0 {
