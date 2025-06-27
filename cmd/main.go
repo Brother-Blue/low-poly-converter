@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime/debug"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 
@@ -18,6 +20,7 @@ import (
 var (
 	resizeFlag    = flag.String("resize", "", "Resize the image to the specified dimensions (e.g., 800x600)")
 	intensityFlag = flag.Int("intensity", 100, "Set the intensity of the image processing (1-100)")
+	debugFlag     = flag.Bool("debug", false, "Enable debug mode (creates prof files for use with `go tool pprof ... ./cpu.prof`)")
 )
 
 func parseRezie(dimensions string) (width int, height int, err error) {
@@ -106,6 +109,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *debugFlag {
+		f, _ := os.Create("cpu.prof")
+		pprof.StartCPUProfile(f)
+		defer f.Close()
+		defer pprof.StopCPUProfile()
+
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered from panic:", r)
+				fmt.Println("Stack trace:", debug.Stack())
+			}
+		}()
+	}
+
 	inputPath := flag.Arg(0)
 	outputPath := getOutputPath(inputPath)
 	ext := strings.ToLower(filepath.Ext(inputPath))
@@ -130,4 +147,10 @@ func main() {
 		handleStaticImageProcess(inputPath, outputPath, ext, width, height, intensity)
 	}
 	fmt.Println("Image processing complete. Low-poly image saved successfully.")
+
+	if *debugFlag {
+		f1, _ := os.Create("mem.prof")
+		pprof.WriteHeapProfile(f1)
+		f1.Close()
+	}
 }
