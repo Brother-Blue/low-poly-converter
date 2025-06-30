@@ -7,6 +7,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"sync"
 
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/image/draw"
@@ -114,5 +115,45 @@ func ResizeGif(images *gif.GIF, width, height, intensity int, bar *progressbar.P
 			bar.Add(1)
 		}
 	}
+	return images
+}
+
+/*
+ProcessGifParallel processes each frame of the GIF in parallel.
+It applies the low-poly effect to each frame and resizes it if width and height are specified.
+*/
+func ProcessGifParallel(images *gif.GIF, width, height, intensity int, bar *progressbar.ProgressBar) *gif.GIF {
+	var wg sync.WaitGroup
+	frames := make([]*image.Paletted, len(images.Image))
+	w, h := images.Config.Width, images.Config.Height
+	if width > 0 && height > 0 {
+		w, h = width, height
+	}
+	images.Config.Width = w
+	images.Config.Height = h
+
+	for idx, frame := range images.Image {
+		wg.Add(1)
+		go func(idx int, frame *image.Paletted) {
+			defer wg.Done()
+			rgba := image.NewRGBA(frame.Bounds())
+			draw.Draw(rgba, frame.Bounds(), frame, image.Point{}, draw.Src)
+			if width > 0 && height > 0 {
+				rgba = ResizeImage(rgba, width, height).(*image.RGBA)
+			}
+
+			processed := ApplyLowPoly(rgba, intensity)
+			bounds := image.Rect(0, 0, w, h)
+			paletted := image.NewPaletted(bounds, frame.Palette)
+			draw.Draw(paletted, bounds, processed, processed.Bounds().Min, draw.Over)
+			frames[idx] = paletted
+
+			if bar != nil {
+				bar.Add(1)
+			}
+		}(idx, frame)
+	}
+	wg.Wait()
+	images.Image = frames
 	return images
 }

@@ -67,7 +67,7 @@ func handleGifProcess(inputPath, outputPath string, width, height, intensity int
 
 	if err := gif.EncodeAll(
 		outFile,
-		internal.ResizeGif(images, width, height, intensity, bar)); err != nil {
+		internal.ProcessGifParallel(images, width, height, intensity, bar)); err != nil {
 		fmt.Println("Error saving GIF: ", err)
 		os.Exit(1)
 	}
@@ -99,6 +99,7 @@ func handleStaticImageProcess(inputPath, outputPath, ext string, width, height, 
 		fmt.Println("Error saving image:", err)
 		os.Exit(1)
 	}
+	fmt.Println("Image processing complete. Low-poly image saved successfully.")
 }
 
 func main() {
@@ -151,7 +152,6 @@ func main() {
 	default:
 		fmt.Printf("Unsupported image format: %s\n", ext)
 	}
-	fmt.Println("Image processing complete. Low-poly image saved successfully.")
 
 	if *debugFlag {
 		f1, _ := os.Create("mem.prof")

@@ -60,8 +60,7 @@ func ApplyLowPoly(img image.Image, intensity int) image.Image {
 		bx, by := tris.Points[ib].X, tris.Points[ib].Y
 		cx, cy := tris.Points[ic].X, tris.Points[ic].Y
 
-		avgColor := computeAverageColor(img, ax, ay, bx, by, cx, cy)
-		fillTriangle(out, ax, ay, bx, by, cx, cy, avgColor)
+		processTriangle(img, out, ax, ay, bx, by, cx, cy)
 	}
 
 	return out
@@ -94,21 +93,25 @@ func isPointInTriangle(px, py, ax, ay, bx, by, cx, cy float64) bool {
 }
 
 /*
-computeAverageColor computes the average color of the pixels inside the triangle defined by points (ax, ay), (bx, by), and (cx, cy).
-It iterates over the bounding box of the triangle and checks if each pixel is inside the triangle
-using the isPointInTriangle function.
+processTriangle processes a triangle defined by points (ax, ay), (bx, by), and (cx, cy) in the input image imgIn.
+It calculates the average color of the pixels inside the triangle and fills the triangle in the output image
+imgOut with that average color.
+It iterates over the bounding box of the triangle to find all pixels that are inside it, computes their average color,
+and sets that color for all pixels inside the triangle in the output image.
 */
-func computeAverageColor(img image.Image, ax, ay, bx, by, cx, cy float64) color.Color {
+func processTriangle(imgIn image.Image, imgOut *image.RGBA, ax, ay, bx, by, cx, cy float64) {
+	var r, g, b, a, count uint32
+	points := make([][2]float64, 0)
 	minX := int(min(ax, min(bx, cx)))
 	maxX := int(max(ax, max(bx, cx)))
 	minY := int(min(ay, min(by, cy)))
 	maxY := int(max(ay, max(by, cy)))
 
-	var r, g, b, a, count uint32
 	for y := minY; y <= maxY; y++ {
 		for x := minX; x <= maxX; x++ {
 			if isPointInTriangle(float64(x), float64(y), ax, ay, bx, by, cx, cy) {
-				cr, cg, cb, ca := img.At(x, y).RGBA()
+				points = append(points, [2]float64{float64(x), float64(y)})
+				cr, cg, cb, ca := imgIn.At(x, y).RGBA()
 				r += cr
 				g += cg
 				b += cb
@@ -117,29 +120,19 @@ func computeAverageColor(img image.Image, ax, ay, bx, by, cx, cy float64) color.
 			}
 		}
 	}
-	if count == 0 {
-		return color.RGBA{0, 0, 0, 255}
-	}
-	return color.RGBA{
-		uint8(r / count >> 8),
-		uint8(g / count >> 8),
-		uint8(b / count >> 8),
-		uint8(a / count >> 8),
-	}
-}
-
-// fillTriangle fills the triangle defined by points (ax, ay), (bx, by), and (cx, cy) in the image with the specified color.
-func fillTriangle(img *image.RGBA, ax, ay, bx, by, cx, cy float64, col color.Color) {
-	minX := int(min(ax, min(bx, cx)))
-	maxX := int(max(ax, max(bx, cx)))
-	minY := int(min(ay, min(by, cy)))
-	maxY := int(max(ay, max(by, cy)))
-
-	for y := minY; y <= maxY; y++ {
-		for x := minX; x <= maxX; x++ {
-			if isPointInTriangle(float64(x), float64(y), ax, ay, bx, by, cx, cy) {
-				img.Set(x, y, col)
+	if count != 0 {
+		col := color.RGBA{
+			uint8(r / count >> 8),
+			uint8(g / count >> 8),
+			uint8(b / count >> 8),
+			uint8(a / count >> 8),
+		}
+		for i := 0; i < len(points); i++ {
+			x, y := int(points[i][0]), int(points[i][1])
+			if x < 0 || y < 0 || x >= imgIn.Bounds().Dx() || y >= imgIn.Bounds().Dy() {
+				continue
 			}
+			imgOut.Set(x, y, col)
 		}
 	}
 }
