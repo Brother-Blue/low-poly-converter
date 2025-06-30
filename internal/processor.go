@@ -82,43 +82,6 @@ func ResizeImage(img image.Image, width int, height int) image.Image {
 }
 
 /*
-ResizeGif resizes each frame of the given GIF image to the specified width and height.
-If width or height is set to 0, it retains the original dimensions of the GIF.
-It uses the intesity parameter to adjust the low poly effect applied to each frame.
-*/
-func ResizeGif(images *gif.GIF, width, height, intensity int, bar *progressbar.ProgressBar) *gif.GIF {
-	var newWidth, newHeight int
-	if width > 0 && height > 0 {
-		newWidth, newHeight = width, height
-	} else {
-		newWidth = images.Config.Width
-		newHeight = images.Config.Height
-	}
-	images.Config.Width = newWidth
-	images.Config.Height = newHeight
-
-	for idx, frame := range images.Image {
-		img := frame
-		if width > 0 || height > 0 {
-			resized := ResizeImage(img, width, height)
-			bounds := image.Rect(0, 0, newWidth, newHeight)
-			palettedImg := image.NewPaletted(bounds, frame.Palette)
-			draw.Draw(palettedImg, bounds, resized, resized.Bounds().Min, draw.Over)
-			img = palettedImg
-		}
-		processedImage := ApplyLowPoly(img, intensity)
-		bounds := image.Rect(0, 0, newWidth, newHeight)
-		gifFrame := image.NewPaletted(bounds, frame.Palette)
-		draw.Draw(gifFrame, bounds, processedImage, processedImage.Bounds().Min, draw.Over)
-		images.Image[idx] = gifFrame
-		if bar != nil {
-			bar.Add(1)
-		}
-	}
-	return images
-}
-
-/*
 ProcessGifParallel processes each frame of the GIF in parallel.
 It applies the low-poly effect to each frame and resizes it if width and height are specified.
 */
