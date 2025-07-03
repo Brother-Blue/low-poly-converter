@@ -75,13 +75,6 @@ func handleGifProcess(inputPath, outputPath string, width, height, intensity int
 }
 
 func handleStaticImageProcess(inputPath, outputPath, ext string, width, height, intensity int) {
-	var bar *progressbar.ProgressBar
-	if *showProgressFlag {
-		bar = progressbar.NewOptions(
-			1,
-			progressbar.OptionSetDescription("Processing image..."),
-		)
-	}
 	img, format, err := internal.LoadImage(inputPath, ext)
 	if err != nil {
 		fmt.Println("Error loading image:", err)
@@ -94,7 +87,6 @@ func handleStaticImageProcess(inputPath, outputPath, ext string, width, height, 
 	}
 
 	lowPolyImage := internal.ApplyLowPoly(img, intensity)
-	bar.Add(1)
 	if err := internal.SaveImage(lowPolyImage, outputPath, format); err != nil {
 		fmt.Println("Error saving image:", err)
 		os.Exit(1)
